@@ -620,10 +620,10 @@ void editorSave() {
     editorSelectSyntaxHighlight();
   }
 
-void editorChange(){
+void editorChangeTextToBinary() {
   for (int i = 0; i < E.number_of_rows; i++) {
     erow *row = &E.row[i];
-    int new_size = row->size * 8; // cada car·cter se convertir· en 8 bits
+    int new_size = row->size * 8; // cada car√°cter se convertir√° en 8 bits
     char *new_characters = malloc(new_size + 1); // +1 para el terminador nulo
 
     int new_index = 0;
@@ -642,9 +642,8 @@ void editorChange(){
     editorUpdateRow(row);
   }
   E.dirty++;
-
-
 }
+
 
 
 
@@ -999,7 +998,10 @@ void editorProcessKeypress() {
   int c = editorReadKey();
 
   switch(c) {
-     
+     case CTRL_KEY('t'): // tecla CTRL-T para convertir texto a binario
+      editorChangeTextToBinary();
+      break;
+
     case '\r':
       editorInsertNewline();
       break;
@@ -1015,9 +1017,6 @@ void editorProcessKeypress() {
       write(STDOUT_FILENO, "\x1b[H", 3);
       exit(0);
       break;
-    case CTRL_KEY('t'):
-      editorChange();
-    break;
     case CTRL_KEY('s'):
       editorSave();
       break;
