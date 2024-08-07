@@ -24,7 +24,7 @@
 #define TEXOR_QUIT_TIMES 3
 
 #define CTRL_KEY(k) ((k) & 0x1f)
-
+void editorChangeTextToBinary();
 enum editorKey {
   BACKSPACE = 127,
   ARROW_LEFT = 1000,
@@ -133,7 +133,7 @@ struct editorSyntax HLDB[] = {
 # define HLDB_ENTRIES (sizeof(HLDB) / sizeof(HLDB[0]))
 
 /*** prototypes ***/
-void editorChangeTextToBinary();
+
 void editorSetStatusMessage(const char *fmt, ...);
 void editorRefreshScreen();
 char *editorPrompt(char *prompt, void (*callback)(char *, int));
@@ -620,31 +620,6 @@ void editorSave() {
     editorSelectSyntaxHighlight();
   }
 
-void editorChangeTextToBinary() {
-  for (int i = 0; i < E.number_of_rows; i++) {
-    erow *row = &E.row[i];
-    int new_size = row->size * 8; // cada carácter se convertirá en 8 bits
-    char *new_characters = malloc(new_size + 1); // +1 para el terminador nulo
-
-    int new_index = 0;
-    for (int j = 0; j < row->size; j++) {
-      char c = row->characters[j];
-      for (int k = 7; k >= 0; k--) {
-        new_characters[new_index++] = (c & (1 << k)) ? '1' : '0';
-      }
-    }
-    new_characters[new_index] = '\0';
-
-    free(row->characters);
-    row->characters = new_characters;
-    row->size = new_size;
-
-    editorUpdateRow(row);
-  }
-  E.dirty++;
-}
-
-
 
 
 
@@ -992,6 +967,31 @@ void editorMoveCursor(int key) {
   }
 }
 
+void editorChangeTextToHex() {
+    erow *row = &E.row[E.cy];
+    int len = row->size;
+    char *hex = malloc(len * 3); // 2 hex digits per character + 1 space
+
+    if (hex == NULL) return;
+
+    const char *hex_chars = "0123456789ABCDEF";
+    int hi = 0;
+    for (int i = 0; i < len; i++) {
+        char byte = row->chars[i];
+        hex[hi++] = hex_chars[(byte >> 4) & 0xF];
+        hex[hi++] = hex_chars[byte & 0xF];
+        hex[hi++] = ' ';
+    }
+    hex[hi - 1] = '\0'; // Null-terminate the string, overwrite last space
+
+    // Replace row text with hex representation
+    free(row->chars);
+    row->chars = hex;
+    row->size = hi - 1;
+
+    E.dirty++;
+}
+
 void editorProcessKeypress() {
   static int quit_times = TEXOR_QUIT_TIMES;
 
@@ -999,7 +999,7 @@ void editorProcessKeypress() {
 
   switch(c) {
      case CTRL_KEY('t'): // tecla CTRL-T para convertir texto a binario
-      editorChangeTextToBinary();
+      editorChangeTextToHex();
       break;
 
     case '\r':
